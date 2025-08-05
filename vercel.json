@@ -28,11 +28,8 @@
       "src": "/(.*)",
       "dest": "/public/index.html"
     }
-  ],
-  "env": {
-    "GOOGLE_TRANSLATE_API_KEY": "@google_translate_api_key",
-    "DEEPL_API_KEY": "@deepl_api_key",
-    "WEBHOOK_SECRET": "@webhook_secret",
+  ]
+}
     "NODE_ENV": "production"
   }
 }
