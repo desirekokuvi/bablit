@@ -34,10 +34,5 @@
     "DEEPL_API_KEY": "@deepl_api_key",
     "WEBHOOK_SECRET": "@webhook_secret",
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 10
-    }
   }
 }
