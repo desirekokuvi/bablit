@@ -1,40 +1,41 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
-    console.log('GHL Webhook received:', req.body);
+    const { messageBody, phone, direction, contactId } = req.body;
     
-    const { messageBody, phone, direction } = req.body;
+    // Get contact's preferred language from GHL
+    const preferredLang = await getContactLanguage(contactId);
     
-    if (!messageBody) {
-      return res.status(400).json({ error: 'No message to translate' });
+    let sourceLang, targetLang;
+    
+    if (direction === 'inbound') {
+      // Customer to business: translate TO English
+      sourceLang = 'auto';
+      targetLang = 'en';
+    } else {
+      // Business to customer: translate FROM English to their language
+      sourceLang = 'en';
+      targetLang = preferredLang || 'en';
     }
-
-    // Translate the message
-    const translateResponse = await fetch(`${req.headers.origin}/api/test-translation`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: messageBody,
-        sourceLang: 'auto',
-        targetLang: 'en'
-      })
-    });
-
-    const translation = await translateResponse.json();
-
-    res.status(200).json({
+    
+    const translation = await translateText(messageBody, sourceLang, targetLang);
+    
+    // If it's outbound and customer has different language, send translation
+    if (direction === 'outbound' && targetLang !== 'en') {
+      await sendTranslatedSMS(contactId, translation.translatedText);
+    }
+    
+    res.json({
       success: true,
       original: messageBody,
       translated: translation.translatedText,
-      from: phone,
-      direction: direction
+      direction,
+      shouldAutoSend: direction === 'outbound' && targetLang !== 'en'
     });
-
+    
   } catch (error) {
-    console.error('Webhook error:', error);
+    res.status(500).json({ error: error.message });
+  }
+}
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 }
